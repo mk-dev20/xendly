@@ -237,6 +237,12 @@ export default function HomeScreen() {
                   className="w-14 h-14 rounded-full justify-center items-center"
                 >
                   <Text style={styles.flag} className="text-2xl">{country.flag}</Text>
+                  <Text style={[styles.currencyCode, { 
+                    color: selectedCurrency === country.currency ? '#FFFFFF' : colors.primary,
+                    opacity: selectedCurrency === country.currency ? 1 : 0.8
+                  }]} className="text-xs font-bold mt-1">
+                    {country.currency}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -548,6 +554,11 @@ const styles = StyleSheet.create({
   },
   flag: {
     fontSize: 28,
+  },
+  currencyCode: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 2,
   },
   actionsCard: {
     marginHorizontal: 24,

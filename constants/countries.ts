@@ -33,7 +33,17 @@ export const COUNTRIES: Country[] = [
   }
 ];
 
-export const SUPPORTED_CURRENCIES = ['KES', 'UGX', 'TZS', 'RWF', 'BIF', 'USDC', 'XLM'];
+export const SUPPORTED_CURRENCIES = ['XLM', 'USDC', 'KES', 'UGX', 'TZS', 'RWF', 'BIF'];
+
+export const CURRENCY_FLAGS: Record<string, string> = {
+  'KES': '🇰🇪',
+  'UGX': '🇺🇬', 
+  'TZS': '🇹🇿',
+  'RWF': '🇷🇼',
+  'BIF': '🇧🇮',
+  'XLM': '🌟',
+  'USDC': '🇺🇸',
+};
 
 export const EXCHANGE_RATES: Record<string, number> = {
   KES: 1,

@@ -8,7 +8,30 @@ import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatCurrency, shortenAddress } from '@/utils/format';
 import { SUPPORTED_CURRENCIES, EXCHANGE_RATES } from '@/constants/countries';
-import { ArrowLeftRight, Wallet as WalletIcon, ChevronDown } from 'lucide-react-native';
+import { ArrowLeftRight, Wallet as WalletIcon, ChevronDown, TrendingUp } from 'lucide-react-native';
+
+const getCurrencyFlag = (currency: string): string => {
+  const currencyToCountry: Record<string, string> = {
+    'KES': 'KE',
+    'UGX': 'UG', 
+    'TZS': 'TZ',
+    'RWF': 'RW',
+    'BIF': 'BI',
+    'XLM': '🌟', // Special case for Stellar
+    'USDC': '🇺🇸',
+  };
+  
+  const countryCode = currencyToCountry[currency];
+  if (!countryCode) return '💱';
+  if (countryCode.length === 2) {
+    return countryCode
+      .toUpperCase()
+      .replace(/./g, char =>
+        String.fromCodePoint(127397 + char.charCodeAt(0))
+      );
+  }
+  return countryCode;
+};
 
 export default function SwapScreen() {
   const { selectedWallet } = useWallet();
@@ -90,7 +113,10 @@ export default function SwapScreen() {
                 style={[styles.currencySelector, { borderColor: colors.border }]}
                 onPress={() => setShowFromPicker(!showFromPicker)}
               >
-                <Text style={[styles.currencyText, { color: colors.text }]}>{fromCurrency}</Text>
+                <View style={styles.currencyDisplay} className="flex-row items-center">
+                  <Text style={styles.currencyFlag} className="text-xl mr-2">{getCurrencyFlag(fromCurrency)}</Text>
+                  <Text style={[styles.currencyText, { color: colors.text }]}>{fromCurrency}</Text>
+                </View>
                 <ChevronDown size={20} color={colors.textMuted} />
               </TouchableOpacity>
               
@@ -105,7 +131,10 @@ export default function SwapScreen() {
                         setShowFromPicker(false);
                       }}
                     >
-                      <Text style={[styles.currencyOptionText, { color: colors.text }]}>{currency}</Text>
+                      <View style={styles.currencyOptionContent} className="flex-row items-center">
+                        <Text style={styles.currencyOptionFlag} className="text-lg mr-3">{getCurrencyFlag(currency)}</Text>
+                        <Text style={[styles.currencyOptionText, { color: colors.text }]}>{currency}</Text>
+                      </View>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -127,7 +156,10 @@ export default function SwapScreen() {
                 style={[styles.currencySelector, { borderColor: colors.border }]}
                 onPress={() => setShowToPicker(!showToPicker)}
               >
-                <Text style={[styles.currencyText, { color: colors.text }]}>{toCurrency}</Text>
+                <View style={styles.currencyDisplay} className="flex-row items-center">
+                  <Text style={styles.currencyFlag} className="text-xl mr-2">{getCurrencyFlag(toCurrency)}</Text>
+                  <Text style={[styles.currencyText, { color: colors.text }]}>{toCurrency}</Text>
+                </View>
                 <ChevronDown size={20} color={colors.textMuted} />
               </TouchableOpacity>
 
@@ -142,7 +174,10 @@ export default function SwapScreen() {
                         setShowToPicker(false);
                       }}
                     >
-                      <Text style={[styles.currencyOptionText, { color: colors.text }]}>{currency}</Text>
+                      <View style={styles.currencyOptionContent} className="flex-row items-center">
+                        <Text style={styles.currencyOptionFlag} className="text-lg mr-3">{getCurrencyFlag(currency)}</Text>
+                        <Text style={[styles.currencyOptionText, { color: colors.text }]}>{currency}</Text>
+                      </View>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -162,13 +197,33 @@ export default function SwapScreen() {
           />
           
           {amountNumber > 0 && (
-            <View style={styles.conversionPreview}>
-              <Text style={[styles.conversionText, { color: colors.text }]}>
-                You will receive: {formatCurrency(convertedAmount, toCurrency)}
-              </Text>
-              <Text style={[styles.rateText, { color: colors.textMuted }]}>
-                Rate: 1 {fromCurrency} = {conversionRate.toFixed(4)} {toCurrency}
-              </Text>
+            <View style={[styles.conversionPreview, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30` }]} 
+                  className="mt-4 p-4 border-2 rounded-2xl">
+              <View style={styles.conversionHeader} className="flex-row items-center mb-3">
+                <TrendingUp size={20} color={colors.primary} />
+                <Text style={[styles.conversionTitle, { color: colors.primary }]} className="text-base font-bold ml-2">
+                  Conversion Preview
+                </Text>
+              </View>
+              <View style={styles.conversionRow} className="flex-row justify-between items-center mb-2">
+                <Text style={[styles.conversionLabel, { color: colors.textMuted }]} className="text-sm">
+                  You will receive:
+                </Text>
+                <View style={styles.conversionAmount} className="flex-row items-center">
+                  <Text style={styles.conversionFlag} className="text-base mr-1">{getCurrencyFlag(toCurrency)}</Text>
+                  <Text style={[styles.conversionText, { color: colors.text }]} className="text-base font-bold">
+                    {formatCurrency(convertedAmount, toCurrency)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.conversionRow} className="flex-row justify-between items-center">
+                <Text style={[styles.conversionLabel, { color: colors.textMuted }]} className="text-sm">
+                  Exchange rate:
+                </Text>
+                <Text style={[styles.rateText, { color: colors.textMuted }]} className="text-sm font-semibold">
+                  1 {fromCurrency} = {conversionRate.toFixed(4)} {toCurrency}
+                </Text>
+              </View>
             </View>
           )}
         </Card>
@@ -256,6 +311,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  currencyDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currencyFlag: {
+    fontSize: 20,
+    marginRight: 8,
+  },
   currencyPicker: {
     position: 'absolute',
     top: '100%',
@@ -271,6 +334,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
+  currencyOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currencyOptionFlag: {
+    fontSize: 18,
+    marginRight: 12,
+  },
   currencyOptionText: {
     fontSize: 14,
   },
@@ -285,17 +356,44 @@ const styles = StyleSheet.create({
   },
   conversionPreview: {
     marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  conversionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  conversionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  conversionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  conversionLabel: {
+    fontSize: 14,
+  },
+  conversionAmount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  conversionFlag: {
+    fontSize: 16,
+    marginRight: 4,
   },
   conversionText: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
   },
   rateText: {
     fontSize: 12,
+    fontWeight: '600',
   },
   buttonContainer: {
     paddingHorizontal: 24,

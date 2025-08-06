@@ -121,6 +121,18 @@ export default function HistoryScreen() {
                  type === 'received' ? `From: ${shortenAddress(item.from)}` :
                  type === 'funded' ? 'Friendbot Funding' : 'Currency Swap'}
               </Text>
+              <View style={styles.assetInfo} className="flex-row items-center mb-1">
+                <Text style={[styles.assetCode, { color: colors.textMuted }]} className="text-xs font-semibold">
+                  {item.asset_code}
+                </Text>
+                {item.asset_code !== 'XLM' && (
+                  <View style={[styles.assetBadge, { backgroundColor: `${colors.accent}20` }]} className="ml-2 px-2 py-1 rounded-full">
+                    <Text style={[styles.assetBadgeText, { color: colors.accent }]} className="text-xs font-bold">
+                      Asset
+                    </Text>
+                  </View>
+                )}
+              </View>
               {item.memo && (
                 <Text style={[styles.transactionMemo, { color: colors.textMuted }]} className="text-xs italic">
                   "{item.memo}"
@@ -320,6 +332,25 @@ const styles = StyleSheet.create({
   transactionDate: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  assetInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  assetCode: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  assetBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  assetBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   transactionRight: {
     alignItems: 'flex-end',

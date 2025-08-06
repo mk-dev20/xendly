@@ -111,7 +111,7 @@ export function CreateWalletModal({ visible, onClose }: CreateWalletModalProps) 
                 onChangeText={setWalletName}
                 placeholder="Enter wallet name"
                 autoCapitalize="words"
-                helperText="Choose a unique name for your wallet"
+                helperText="Choose a unique name to identify your Stellar wallet"
               />
               
               <Input
@@ -120,7 +120,7 @@ export function CreateWalletModal({ visible, onClose }: CreateWalletModalProps) 
                 onChangeText={setPassword}
                 secureTextEntry
                 placeholder="Create a strong password"
-                helperText="Minimum 8 characters required"
+                helperText="Minimum 8 characters - secures your wallet's private key"
               />
 
               <Input
@@ -134,8 +134,8 @@ export function CreateWalletModal({ visible, onClose }: CreateWalletModalProps) 
             </Card>
 
             <View style={styles.securityNotice} className="mt-6">
-              <Text style={[styles.noticeText, { color: colors.textMuted }]} className="text-sm text-center leading-5">
-                🔒 Your wallet will be secured with this password. Make sure to remember it as it cannot be recovered.
+              <Text style={[styles.noticeText, { color: colors.textMuted }]} className="text-sm text-center leading-6">
+                🔒 This password encrypts your Stellar private key locally. It cannot be recovered if lost, so store it securely.
               </Text>
             </View>
           </View>

@@ -19,8 +19,23 @@ export const getGreeting = (): string => {
   return 'Good evening';
 };
 
+export const countryToFlag = (code: string): string => {
+  return code
+    .toUpperCase()
+    .replace(/./g, char =>
+      String.fromCodePoint(127397 + char.charCodeAt(0))
+    );
+};
+
 export const isValidStellarAddress = (address: string): boolean => {
-  return address.length === 56 && address.startsWith('G');
+  try {
+    const { StrKey } = require('stellar-sdk');
+    return StrKey.isValidEd25519PublicKey(address);
+  } catch (error) {
+    console.error('Stellar SDK validation error:', error);
+    // Fallback validation if SDK fails
+    return address.length === 56 && address.startsWith('G');
+  }
 };
 
 export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string, rates: Record<string, number>): number => {

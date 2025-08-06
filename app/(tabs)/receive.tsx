@@ -197,6 +197,12 @@ export default function ReceiveScreen() {
             <Text style={[styles.addressText, { color: colors.text }]} className="text-sm font-mono leading-5 mb-3">
               {receiveData.public_key}
             </Text>
+            <View style={[styles.validationBadge, { backgroundColor: `${colors.success}20` }]} className="flex-row items-center px-3 py-2 rounded-full mb-3">
+              <CheckCircle size={14} color={colors.success} />
+              <Text style={[styles.validationText, { color: colors.success }]} className="text-xs font-bold ml-2">
+                Valid Stellar Address
+              </Text>
+            </View>
             <View style={styles.addressActions} className="flex-row gap-3">
               <Animated.View style={[copyAnimatedStyle, { flex: 1 }]}>
                 <Button
@@ -232,7 +238,7 @@ export default function ReceiveScreen() {
                       {typeof asset === 'string' ? asset : 'Unknown Asset'}
                     </Text>
                   </View>
-                ))}
+                helperText="Share this address to receive Stellar payments"
               </View>
             </View>
           )}
@@ -359,6 +365,20 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     lineHeight: 20,
     marginBottom: 12,
+  },
+  validationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  validationText: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 8,
   },
   addressActions: {
     flexDirection: 'row',

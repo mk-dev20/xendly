@@ -9,7 +9,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatCurrency, shortenAddress, isValidStellarAddress } from '@/utils/format';
 import { COUNTRIES, EXCHANGE_RATES } from '@/constants/countries';
-import { ChevronDown, Wallet as WalletIcon, Send, Shield, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle } from 'lucide-react-native';
+import { ChevronDown, Wallet as WalletIcon, Send, Shield, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Globe } from 'lucide-react-native';
 
 export default function SendScreen() {
   const { selectedWallet, sendMoney } = useWallet();
@@ -152,9 +152,14 @@ export default function SendScreen() {
                   <Text style={[styles.countryName, { color: colors.text }]} className="text-lg font-bold">
                     {selectedCountry.name}
                   </Text>
-                  <Text style={[styles.countryCurrency, { color: colors.textMuted }]} className="text-sm font-semibold">
-                    {selectedCountry.currency}
-                  </Text>
+                  <View style={styles.currencyRow} className="flex-row items-center">
+                    <Text style={[styles.countryCurrency, { color: colors.textMuted }]} className="text-sm font-semibold mr-2">
+                      {selectedCountry.currency}
+                    </Text>
+                    <View style={[styles.flagBadge, { backgroundColor: `${colors.primary}20` }]} className="px-2 py-1 rounded-full">
+                      <Text style={styles.flagBadgeText} className="text-xs">{selectedCountry.flag}</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
               <ChevronDown size={24} color={colors.textMuted} />
@@ -178,9 +183,14 @@ export default function SendScreen() {
                       <Text style={[styles.countryName, { color: colors.text }]} className="text-lg font-bold">
                         {country.name}
                       </Text>
-                      <Text style={[styles.countryCurrency, { color: colors.textMuted }]} className="text-sm font-semibold">
-                        {country.currency}
-                      </Text>
+                      <View style={styles.currencyRow} className="flex-row items-center">
+                        <Text style={[styles.countryCurrency, { color: colors.textMuted }]} className="text-sm font-semibold mr-2">
+                          {country.currency}
+                        </Text>
+                        <View style={[styles.flagBadge, { backgroundColor: `${colors.primary}20` }]} className="px-2 py-1 rounded-full">
+                          <Text style={styles.flagBadgeText} className="text-xs">{country.flag}</Text>
+                        </View>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -197,7 +207,7 @@ export default function SendScreen() {
               placeholder="G... (56 characters)"
               multiline
               error={recipientAddress && !isValidStellarAddress(recipientAddress) ? 'Invalid Stellar address format' : undefined}
-              helperText="Stellar addresses start with 'G' and are 56 characters long"
+              helperText="Enter a valid Stellar public key address"
             />
           </Card>
 
@@ -411,6 +421,18 @@ const styles = StyleSheet.create({
   countryCurrency: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  currencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  flagBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  flagBadgeText: {
+    fontSize: 12,
   },
   countryPicker: {
     borderWidth: 2,

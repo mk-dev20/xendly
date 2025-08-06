@@ -213,14 +213,10 @@ export function TwoFASetupModal({ visible, onClose, onSuccess }: TwoFASetupModal
                         size={200}
                         color="#000000"
                         backgroundColor="#FFFFFF"
-                        logo={require('@/assets/images/icon.png')}
-                        logoSize={40}
-                        logoBackgroundColor="#FFFFFF"
-                        logoMargin={4}
                       />
                     </View>
                     <Text style={[styles.qrLabel, { color: colors.textMuted }]} className="text-sm mt-4 text-center font-semibold">
-                      Open Google Authenticator and scan this QR code
+                      Scan with Google Authenticator or any TOTP app
                     </Text>
                   </View>
 
