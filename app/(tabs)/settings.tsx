@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { ThemedBackground } from '@/components/ThemedBackground';
 import { Card } from '@/components/Card';
@@ -44,13 +46,35 @@ export default function SettingsScreen() {
     }
   };
 
+  const navigation = useNavigation();
+  
+  const dologout = async () => {
+  try {
+    // 1. Hit backend logout endpoint (optional but clean)
+    await apiService.logout(); 
+
+    // 2. Clear token from AsyncStorage
+    await AsyncStorage.removeItem('auth_token');
+
+    // 3. Navigate to login screen & reset stack
+    navigation.reset({
+      index: 0,
+      routes: [{ name: '(auth)/login' }],
+    });
+  } catch (error) {
+    console.error('Logout failed:', error);
+    Alert.alert('Logout Failed', 'Something went wrong while logging out. Try again.');
+  }
+};
+
+
   const handleLogout = () => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout of your Xendly account?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: logout },
+        { text: 'Logout', style: 'destructive', onPress: dologout },
       ]
     );
   };
@@ -435,17 +459,17 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 22,
   },
   header: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: 12,
+    marginBottom: 24,
     alignItems: 'center',
   },
   headerIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -455,8 +479,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   profileCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -466,7 +490,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -496,7 +520,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   badgeText: {
     fontSize: 10,
@@ -506,24 +530,24 @@ const styles = StyleSheet.create({
   editButton: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   settingsCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
   cardTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 8,
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 6,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -533,13 +557,13 @@ const styles = StyleSheet.create({
   settingIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   settingText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
@@ -552,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 4,
     alignSelf: 'flex-start',
     marginTop: 4,
   },
@@ -562,18 +586,18 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   actionsCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 6,
   },
   actionIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -588,8 +612,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   divider: {
-    height: 1,
-    marginVertical: 8,
+    marginVertical: 4,
   },
   footer: {
     alignItems: 'center',

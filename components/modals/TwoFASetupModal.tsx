@@ -33,28 +33,28 @@ export function TwoFASetupModal({ visible, onClose, onSuccess }: TwoFASetupModal
     opacity: opacity.value,
   }));
 
-  useEffect(() => {
-    if (visible) {
-      loadSetupData();
-      setStep(1);
-      setTotpCode('');
-      setBackupCodes([]);
-      setSecretCopied(false);
-    }
-  }, [visible]);
+    useEffect(() => {
+      if (visible) {
+        loadSetupData();
+        setStep(1);
+        setTotpCode('');
+        setBackupCodes([]);
+        setSecretCopied(false);
+      }
+    }, [visible]);
 
-  const loadSetupData = async () => {
-    setLoading(true);
-    try {
-      const data = await apiService.setup2FA();
-      setSetupData(data);
-    } catch (error) {
-      Alert.alert('Setup Error', 'Failed to initialize 2FA setup. Please try again.');
-      onClose();
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadSetupData = async () => {
+      setLoading(true);
+      try {
+        const data = await apiService.setup2FA();
+        setSetupData(data);
+      } catch (error) {
+        Alert.alert('Setup Error', 'Failed to initialize 2FA setup. Please try again.');
+        onClose();
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const copySecret = async () => {
     if (!setupData?.secret_key) return;

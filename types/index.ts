@@ -1,3 +1,15 @@
+
+export interface AuthResponse {
+  user_id: string;
+  email: string;
+  username: string;
+  phone_number?: string;
+  is_verified: boolean;
+  is_phone_verified: boolean;
+  token: string;
+  two_fa_required?: boolean;
+}
+
 export interface User {
   user_id: string;
   email: string;
@@ -16,6 +28,17 @@ export interface Wallet {
   balances: string[];
   created_at: string;
 }
+
+export interface AssetBalance {
+  id: string;
+  wallet_id: string;
+  asset_type: string;
+  asset_code: string;
+  asset_issuer: string | null;
+  balance: string;
+  last_updated: string;
+}
+
 
 export interface Transaction {
   hash: string;

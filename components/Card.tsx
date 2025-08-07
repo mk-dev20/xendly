@@ -10,7 +10,7 @@ interface CardProps {
   className?: string;
 }
 
-export function Card({ children, style, padding = 24, elevated = true, className }: CardProps) {
+export function Card({ children, style, padding = 16, elevated = true, className }: CardProps) {
   const { colors, isDark } = useTheme();
 
   const cardStyle = [
@@ -34,7 +34,7 @@ export function Card({ children, style, padding = 24, elevated = true, className
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
   },

@@ -249,17 +249,17 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 22,
   },
   header: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     marginBottom: 24,
     alignItems: 'center',
   },
   headerIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -274,15 +274,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   filterContainer: {
-    paddingLeft: 24,
-    marginBottom: 20,
+    paddingLeft: 12,
+    marginBottom: 12,
+    alignItems: 'center',
   },
   filterTab: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 28,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
     borderWidth: 2,
-    marginRight: 12,
+    marginRight: 10,
   },
   filterText: {
     fontSize: 14,

@@ -14,6 +14,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { formatCurrency, shortenAddress, getGreeting } from '@/utils/format';
 import { COUNTRIES, EXCHANGE_RATES } from '@/constants/countries';
 import { Wallet, Send, ArrowLeftRight, QrCode, Clock, ChevronDown, Plus, TrendingUp, PiggyBank, Users, ChartBar as BarChart3, RefreshCw, Zap, Star, Gift, Target } from 'lucide-react-native';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { getFlagImage } from '@/utils/getFlagImage';
+import { ImageBackground } from 'react-native';
+
 
 const { width } = Dimensions.get('window');
 
@@ -50,7 +54,7 @@ const mockInsights = [
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const { selectedWallet, wallets, refreshWallets, fundWallet, syncWallet, isLoading } = useWallet();
+  const { selectedWallet, setSelectedWallet, wallets, refreshWallets, fundWallet, syncWallet, isLoading } = useWallet();
   const { colors } = useTheme();
   const [selectedCurrency, setSelectedCurrency] = useState('KES');
   const [refreshing, setRefreshing] = useState(false);
@@ -64,34 +68,38 @@ export default function HomeScreen() {
   const convertedBalance = balance * EXCHANGE_RATES[selectedCurrency];
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await refreshWallets();
-      if (selectedWallet) {
-        await syncWallet(selectedWallet.wallet_id);
-      }
-    } catch (error) {
-      console.error('Refresh failed:', error);
-      Alert.alert('Refresh Failed', 'Unable to refresh wallet data');
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  if (!selectedWallet) return;
+
+  setRefreshing(true);
+  try {
+    await syncWallet(selectedWallet.wallet_id);
+    await refreshWallets();
+  } catch (error) {
+    console.error('Refresh failed:', error);
+    Alert.alert('Refresh Failed', 'Unable to refresh wallet data');
+  } finally {
+    setRefreshing(false);
+  }
+};
+
 
   const handleFundWallet = async () => {
-    if (!selectedWallet) return;
-    
-    setFundingWallet(true);
-    try {
-      await fundWallet(selectedWallet.wallet_id);
-      Alert.alert('Success', 'Wallet funded successfully!');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fund wallet';
-      Alert.alert('Funding Failed', errorMessage);
-    } finally {
-      setFundingWallet(false);
-    }
-  };
+  if (!selectedWallet) return;
+
+  setFundingWallet(true);
+  try {
+    const updated = await fundWallet(selectedWallet.wallet_id);
+
+    Alert.alert('🔥 Funded!', `Wallet balance: ${updated.balance_xlm} XLM`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fund wallet';
+    Alert.alert('🚫 Funding Failed', errorMessage);
+  } finally {
+    setFundingWallet(false);
+  }
+};
+
+
 
   const quickActions = [
     { 
@@ -108,13 +116,6 @@ export default function HomeScreen() {
       onPress: () => router.push('/(tabs)/send'), 
       color: '#3B82F6',
       gradient: ['#3B82F6', '#60A5FA'],
-    },
-    { 
-      title: 'Swap', 
-      icon: ArrowLeftRight, 
-      onPress: () => router.push('/(tabs)/swap'), 
-      color: '#F59E0B',
-      gradient: ['#F59E0B', '#FBBF24'],
     },
     { 
       title: 'Receive', 
@@ -157,11 +158,13 @@ export default function HomeScreen() {
       >
         {/* Enhanced Greeting Section */}
         <View style={styles.greeting} className="px-6 mb-8">
-          <Text style={[styles.greetingText, { color: colors.textMuted }]} className="text-base font-medium">
-            {greeting}
-          </Text>
-          <Text style={[styles.userName, { color: colors.text }]} className="text-3xl font-bold">
-            {user?.username || 'User'}
+          <Text style={[styles.name]}>
+            <Text style={[styles.greetingText, { color: colors.textMuted }]} className="text-base font-medium">
+              {greeting}
+            </Text>
+            <Text style={[styles.userName, { color: colors.text }]} className="text-3xl font-bold">
+              {user?.username || 'User'}
+            </Text>
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: `${colors.success}20` }]} className="mt-2">
             <Text style={[styles.statusText, { color: colors.success }]} className="text-xs font-semibold">
@@ -170,7 +173,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Enhanced Wallet Card */}
+                {/* Enhanced Wallet Card */}
         <Card style={styles.walletCard} className="mx-6 mb-6" elevated>
           <View style={styles.walletHeader} className="flex-row justify-between items-center mb-6">
             <Text style={[styles.walletLabel, { color: colors.textMuted }]} className="text-sm font-bold uppercase tracking-wider">
@@ -179,7 +182,11 @@ export default function HomeScreen() {
             <View style={styles.walletActions} className="flex-row gap-2">
               <TouchableOpacity 
                 style={[styles.syncButton, { backgroundColor: `${colors.primary}20` }]}
-                onPress={() => selectedWallet && syncWallet(selectedWallet.wallet_id)}
+                onPress={async () => {
+                  if (!selectedWallet) return;
+                  const synced = await syncWallet(selectedWallet.wallet_id);
+                  setSelectedWallet(synced);
+                }}
                 className="w-10 h-10 rounded-full justify-center items-center"
               >
                 <RefreshCw size={18} color={colors.primary} />
@@ -211,62 +218,83 @@ export default function HomeScreen() {
 
           <View style={styles.balanceSection} className="items-center">
             <Text style={[styles.balance, { color: colors.text }]} className="text-4xl font-bold mb-2">
-              {formatCurrency(convertedBalance, selectedCurrency)}
+              {formatCurrency(
+                parseFloat(selectedWallet?.balance_xlm || '0') * EXCHANGE_RATES[selectedCurrency],
+                selectedCurrency
+              )}
             </Text>
             <Text style={[styles.balanceXLM, { color: colors.textMuted }]} className="text-base mb-8">
-              ≈ {formatCurrency(balance, 'XLM')}
+              ≈ {formatCurrency(parseFloat(selectedWallet?.balance_xlm || '0'), 'XLM')}
             </Text>
             
             <View style={styles.currencyFlags} className="flex-row justify-center gap-3">
               {COUNTRIES.map((country) => (
                 <TouchableOpacity
                   key={country.code}
+                  onPress={() => setSelectedCurrency(country.currency)}
                   style={[
                     styles.flagButton,
                     {
-                      backgroundColor: selectedCurrency === country.currency 
-                        ? colors.primary 
-                        : `${colors.primary}20`,
                       transform: selectedCurrency === country.currency 
                         ? [{ scale: 1.15 }] 
                         : [{ scale: 1 }],
                       shadowColor: selectedCurrency === country.currency ? colors.primary : 'transparent',
                     },
                   ]}
-                  onPress={() => setSelectedCurrency(country.currency)}
-                  className="w-14 h-14 rounded-full justify-center items-center"
+                  className="w-14 h-14 rounded-full justify-center items-center overflow-hidden"
                 >
-                  <Text style={styles.flag} className="text-2xl">{country.flag}</Text>
-                  <Text style={[styles.currencyCode, { 
-                    color: selectedCurrency === country.currency ? '#FFFFFF' : colors.primary,
-                    opacity: selectedCurrency === country.currency ? 1 : 0.8
-                  }]} className="text-xs font-bold mt-1">
-                    {country.currency}
-                  </Text>
+                  <ImageBackground
+                    source={getFlagImage(country.flag)}
+                    resizeMode="cover"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                    imageStyle={{
+                      borderRadius: 10,
+                      opacity: selectedCurrency === country.currency ? 1 : 0.7,
+                    }}
+                  >
+                    <Text style={[
+                      styles.currencyCode,
+                      { 
+                        color: selectedCurrency === country.currency ? '#fff' : '#000',
+                        backgroundColor: selectedCurrency === country.currency ? `${colors.primary}88` : 'rgba(235, 194, 14, 0.3)',
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 6,
+                        fontSize: 10,
+                        marginTop: 2
+                      }
+                    ]}>
+                      {country.currency}
+                    </Text>
+                  </ImageBackground>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
         </Card>
 
+
         {/* Enhanced Quick Actions */}
         <Card style={styles.actionsCard} className="mx-6 mb-6" elevated>
-          <Text style={[styles.sectionTitle, { color: colors.text }]} className="text-xl font-bold mb-6">
-            Quick Actions
-          </Text>
-          <View style={styles.actionsGrid} className="flex-row flex-wrap justify-between">
+          
+          <View style={styles.actionsGrid} className="flex-row flex-wrap">
             {quickActions.map((action, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
                   styles.actionButton, 
-                  { backgroundColor: `${action.color}15` }
+                  { backgroundColor: `${action.color}32` }
                 ]}
                 onPress={action.onPress}
                 disabled={action.loading}
                 className="rounded-2xl mb-4 shadow-lg"
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: `${action.color}25` }]} className="w-14 h-14 rounded-full justify-center items-center mb-3">
+                <View style={[styles.actionIconContainer]} className="w-14 h-14 rounded-full justify-center items-center mb-3">
                   {action.loading ? (
                     <RefreshCw size={28} color={action.color} />
                   ) : (
@@ -283,14 +311,14 @@ export default function HomeScreen() {
 
         {/* Enhanced Insights Carousel */}
         <View style={styles.insightsSection} className="mb-6">
-          <Text style={[styles.sectionTitle, { color: colors.text }]} className="text-xl font-bold ml-6 mb-4">
+          <Text style={[styles.sectionTitle, { color: colors.text }]} className="text-xl font-bold">
             Insights & Offers
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.insightsScroll} className="pl-6">
             {mockInsights.map((insight, index) => (
               <Card key={index} style={styles.insightCard} className="mr-4 w-64" elevated>
                 <View style={styles.insightContent} className="items-center">
-                  <View style={[styles.insightIconContainer, { backgroundColor: `${insight.color}20` }]} className="w-16 h-16 rounded-full justify-center items-center mb-4">
+                  <View style={[styles.insightIconContainer, { backgroundColor: `${insight.color}32` }]} className="w-16 h-16 rounded-full justify-center items-center mb-4">
                     <insight.icon size={32} color={insight.color} />
                   </View>
                   {insight.badge && (
@@ -441,19 +469,23 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 24,
   },
   greeting: {
     paddingHorizontal: 24,
     marginBottom: 32,
   },
+  name: {
+    flexDirection: 'row',
+  },
   greetingText: {
-    fontSize: 16,
+    fontSize: 24,
     marginBottom: 4,
   },
   userName: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
+    paddingLeft: 12,
   },
   statusBadge: {
     alignSelf: 'flex-start',
@@ -468,17 +500,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   walletCard: {
-    marginHorizontal: 24,
+    marginHorizontal: 12,
     marginBottom: 24,
   },
   walletHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   walletLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -490,48 +522,48 @@ const styles = StyleSheet.create({
   syncButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   walletSelector: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   walletAddressContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 12,
   },
   walletAddress: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 12,
     fontFamily: 'monospace',
   },
   walletBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   walletBadgeText: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '700',
   },
   balanceSection: {
     alignItems: 'center',
   },
   balance: {
-    fontSize: 40,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 2,
   },
   balanceXLM: {
     fontSize: 16,
-    marginBottom: 32,
+    marginBottom: 12,
   },
   currencyFlags: {
     flexDirection: 'row',
@@ -540,8 +572,8 @@ const styles = StyleSheet.create({
   },
   flagButton: {
     width: 56,
-    height: 56,
-    borderRadius: 28,
+    height: 54,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     shadowOffset: {
@@ -553,7 +585,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   flag: {
-    fontSize: 28,
+    fontSize: 18,
   },
   currencyCode: {
     fontSize: 10,
@@ -561,13 +593,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   actionsCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
+    marginHorizontal: 12,
+    marginBottom: 26,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 8,
+    alignItems: 'center',
+    paddingLeft: 18,
   },
   actionsGrid: {
     flexDirection: 'row',
@@ -575,12 +609,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   actionButton: {
-    width: (width - 80) / 3,
+    width: (width - 90) / 4,
     aspectRatio: 1,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
     shadowOffset: {
       width: 0,
       height: 6,
@@ -590,39 +624,41 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   actionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   actionText: {
     fontSize: 14,
     fontWeight: '700',
   },
   insightsSection: {
-    marginBottom: 24,
+    marginBottom: 18,
   },
+  
   insightsScroll: {
-    paddingLeft: 24,
+    paddingLeft: 12,
   },
   insightCard: {
-    width: 260,
-    marginRight: 16,
-    minHeight: 200,
+    width: 340,
+    marginRight: 12,
+    minHeight: 160,
+    borderRadius: 10,
   },
   insightContent: {
     alignItems: 'center',
     position: 'relative',
   },
   insightIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   badge: {
     position: 'absolute',
@@ -630,7 +666,7 @@ const styles = StyleSheet.create({
     right: 16,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 6,
   },
   badgeText: {
     fontSize: 10,
@@ -640,47 +676,47 @@ const styles = StyleSheet.create({
   insightTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 8,
     textAlign: 'center',
   },
   insightSubtitle: {
     fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: 12,
+    marginBottom: 12,
   },
   progressContainer: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   progressBar: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 2,
   },
   progressText: {
     fontSize: 12,
-    marginTop: 8,
+    marginTop: 2,
     textAlign: 'center',
   },
   analyticsCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
   analyticsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 6,
   },
   analyticsIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -689,7 +725,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   analyticsItem: {
-    alignItems: 'center',
+    
   },
   analyticsLabel: {
     fontSize: 12,
@@ -697,7 +733,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   analyticsValue: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 12,
   },
@@ -706,7 +742,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 8,
     gap: 4,
   },
   trendText: {
@@ -716,7 +752,7 @@ const styles = StyleSheet.create({
   currencyBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 8,
   },
   currencyBadgeText: {
     fontSize: 11,
@@ -727,7 +763,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 8,
     gap: 4,
   },
   savingsText: {
@@ -735,19 +771,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   metricsCard: {
-    marginHorizontal: 24,
-    marginBottom: 40,
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
   metricsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
     gap: 12,
   },
   metricsIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },

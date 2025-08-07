@@ -5,7 +5,7 @@ import { Button } from '@/components/Button';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatCurrency, shortenAddress } from '@/utils/format';
-import { Wallet, X, Zap, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle, Coins } from 'lucide-react-native';
+import { Wallet, X, Zap, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle, Coins, MoveLeft } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
 
 interface FundWalletModalProps {
@@ -16,7 +16,7 @@ interface FundWalletModalProps {
 export function FundWalletModal({ visible, onClose }: FundWalletModalProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { selectedWallet, fundWallet } = useWallet();
+  const { selectedWallet, fundWallet, refreshWallets, syncWallet } = useWallet();
   const { colors } = useTheme();
   
   const scale = useSharedValue(1);
@@ -28,68 +28,84 @@ export function FundWalletModal({ visible, onClose }: FundWalletModalProps) {
   }));
 
   const handleFund = async () => {
-    if (!selectedWallet) return;
-    
-    setLoading(true);
-    try {
-      await fundWallet(selectedWallet.wallet_id);
-      
-      // Success animation
-      scale.value = withSequence(
-        withSpring(1.1, { damping: 8 }),
-        withSpring(1, { damping: 8 })
-      );
-      
-      if (Platform.OS !== 'web') {
-        Vibration.vibrate(200);
-      }
-      
-      setSuccess(true);
-      
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-      }, 3000);
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fund wallet';
-      
-      // Error animation
-      scale.value = withSequence(
-        withTiming(0.95, { duration: 100 }),
-        withTiming(1.05, { duration: 100 }),
-        withTiming(1, { duration: 100 })
-      );
-      
-      if (Platform.OS !== 'web') {
-        Vibration.vibrate([100, 50, 100]);
-      }
-      
-      if (errorMessage.includes('already funded') || errorMessage.includes('already been funded')) {
-        Alert.alert(
-          'Already Funded',
-          `This wallet has already been funded by Friendbot. Each wallet can only be funded once on the testnet.`,
-          [{ text: 'OK', onPress: onClose }]
-        );
-      } else if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
-        Alert.alert(
-          'Server Error',
-          'The funding service is temporarily unavailable. Please try again in a few moments.',
-          [{ text: 'OK', onPress: onClose }]
-        );
-      } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
-        Alert.alert(
-          'Authentication Error',
-          'Your session has expired. Please log in again.',
-          [{ text: 'OK', onPress: onClose }]
-        );
-      } else {
-        Alert.alert('Funding Failed', errorMessage, [{ text: 'OK', onPress: onClose }]);
-      }
-    } finally {
-      setLoading(false);
+  if (!selectedWallet) return;
+
+  setLoading(true);
+  try {
+    await fundWallet(selectedWallet.wallet_id);
+
+    // 🔥 Immediately sync after funding
+    await syncWallet(selectedWallet.wallet_id);
+
+    // ✅ Refresh the wallets list to update context/global state
+    await refreshWallets();
+
+    scale.value = withSequence(
+      withSpring(1.1, { damping: 8 }),
+      withSpring(1, { damping: 8 })
+    );
+
+    if (Platform.OS !== 'web') Vibration.vibrate(200);
+
+    setSuccess(true);
+
+    Toast.show({
+      type: 'success',
+      text1: '✅ Funded Successfully!',
+      text2: 'Friendbot said: "Drip activated 💧"',
+    });
+
+    setTimeout(() => {
+      setSuccess(false);
+      onClose();
+    }, 3000);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fund wallet';
+
+    scale.value = withSequence(
+      withTiming(0.95, { duration: 100 }),
+      withTiming(1.05, { duration: 100 }),
+      withTiming(1, { duration: 100 })
+    );
+
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate([100, 50, 100]);
     }
-  };
+
+    // Log the error (recommended for debugging)
+    console.error("🚨 Fund Wallet Error:", errorMessage);
+
+    // Hilarious + helpful error handling
+    if (errorMessage.includes('already funded')) {
+      Alert.alert(
+        '🔒 Already Funded',
+        'This wallet’s got that Friendbot love already. No double dipping on testnet! 😅',
+        [{ text: 'OK', onPress: onClose }]
+      );
+    } else if (errorMessage.includes('500')) {
+      Alert.alert(
+        '💀 Server Error',
+        'Friendbot is probably napping. Try again later or check your connection 💤',
+        [{ text: 'OK', onPress: onClose }]
+      );
+    } else if (errorMessage.includes('401')) {
+      Alert.alert(
+        '🔐 Auth Expired',
+        'Your session’s expired. Time to log back in and flex again.',
+        [{ text: 'OK', onPress: onClose }]
+      );
+    } else {
+      Alert.alert(
+        '🚫 Funding Failed',
+        `Something went wrong:\n\n${errorMessage}`,
+        [{ text: 'OK', onPress: onClose }]
+      );
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleClose = () => {
     setSuccess(false);
@@ -150,22 +166,24 @@ export function FundWalletModal({ visible, onClose }: FundWalletModalProps) {
                         className="w-12 h-12 rounded-full justify-center items-center mr-4">
                     <Wallet size={24} color={colors.primary} />
                   </View>
-                  <View className="flex-1">
-                    <Text style={[styles.walletName, { color: colors.text }]} className="text-lg font-bold">
-                      {selectedWallet?.wallet_name || 'Default Wallet'}
-                    </Text>
-                    <Text style={[styles.walletAddress, { color: colors.textMuted }]} className="text-sm font-mono">
-                      {selectedWallet ? shortenAddress(selectedWallet.public_key) : 'Loading...'}
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text style={[styles.balanceLabel, { color: colors.textMuted }]} className="text-xs font-semibold">
-                      Current Balance
-                    </Text>
-                    <Text style={[styles.balanceAmount, { color: colors.text }]} className="text-lg font-bold">
-                      {formatCurrency(parseFloat(selectedWallet?.balance_xlm || '0'), 'XLM')}
-                    </Text>
-                  </View>
+                  
+                    <View className="flex-1">
+                      <Text style={[styles.walletName, { color: colors.text }]} className="text-lg font-bold">
+                        {selectedWallet?.wallet_name || 'Default Wallet'}
+                      </Text>
+                      <Text style={[styles.walletAddress, { color: colors.textMuted }]} className="text-sm font-mono">
+                        {selectedWallet ? shortenAddress(selectedWallet.public_key) : 'Loading...'}
+                      </Text>
+                    </View>
+                    <View className="flex-end">
+                      <Text style={[styles.balanceLabel, { color: colors.textMuted }]} className="text-xs font-semibold">
+                        Current Balance
+                      </Text>
+                      <Text style={[styles.balanceAmount, { color: colors.text }]} className="text-lg font-bold">
+                        {formatCurrency(parseFloat(selectedWallet?.balance_xlm || '0'), 'XLM')}
+                      </Text>
+                    </View>
+                  
                 </View>
 
                 <View style={[styles.fundingInfo, { backgroundColor: `${colors.warning}10`, borderColor: `${colors.warning}30` }]} 
@@ -183,17 +201,21 @@ export function FundWalletModal({ visible, onClose }: FundWalletModalProps) {
                   </Text>
                 </View>
 
-                <Button
-                  title="Fund Wallet with 10,000 XLM"
-                  onPress={handleFund}
-                  loading={loading}
-                  fullWidth
-                  size="large"
-                  style={styles.fundButton}
-                />
+                
               </Card>
+              
             </Animated.View>
           )}
+        </View>
+        <View style={styles.footer} className="p-6">
+          <Button
+            title="Fund Your Testnet Wallet!"
+            onPress={handleFund}
+            loading={loading}
+            fullWidth
+            size="large"
+            style={styles.fundButton}
+          />
         </View>
       </View>
     </Modal>
@@ -218,7 +240,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     justifyContent: 'center',
   },
   iconSection: {
@@ -226,9 +248,9 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 56,
+    height: 56,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -249,13 +271,12 @@ const styles = StyleSheet.create({
   },
   walletInfo: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   walletIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -263,6 +284,7 @@ const styles = StyleSheet.create({
   walletName: {
     fontSize: 18,
     fontWeight: 'bold',
+    paddingRight: 56,
   },
   walletAddress: {
     fontSize: 14,
@@ -272,9 +294,10 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 12,
     fontWeight: '600',
+    textAlign: 'right',
   },
   balanceAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginTop: 2,
   },
@@ -299,7 +322,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   fundButton: {
-    marginTop: 8,
+    
+  },
+  walletData: {
+
   },
   successContainer: {
     alignItems: 'center',
@@ -322,5 +348,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  footer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
 });

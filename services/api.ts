@@ -21,6 +21,7 @@ class ApiService {
       headers.Authorization = `Bearer ${this.token}`;
     }
     
+    console.log('✅ Sending auth headers:', headers);
     return headers;
   }
 

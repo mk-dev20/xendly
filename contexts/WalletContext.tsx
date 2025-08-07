@@ -98,14 +98,23 @@ export function WalletProvider({ children }: WalletProviderProps) {
   };
 
   const fundWallet = async (walletId: string) => {
-    try {
-      const response = await apiService.fundWallet(walletId);
-      await refreshWallets();
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  };
+  try {
+    const response = await apiService.fundWallet(walletId);
+
+    // Sync to get the real-time updated balance
+    const syncedWallet = await syncWallet(walletId);
+
+    // Set the synced wallet as the selected one
+    setSelectedWallet(syncedWallet);
+
+    return syncedWallet;
+  } catch (error) {
+    console.error('❌ Error funding wallet:', error);
+    throw error;
+  }
+};
+
+
 
   const syncWallet = async (walletId: string) => {
     try {

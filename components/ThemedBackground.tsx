@@ -29,7 +29,7 @@ export function ThemedBackground({ children, style }: ThemedBackgroundProps) {
 
   return (
     <LinearGradient
-      colors={['#FFFFFF', '#F0FDF4', '#D1FAE5']}
+      colors={['#9da00aff', '#F0FDF4', '#c9d8ceff']}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={[styles.container, style]}

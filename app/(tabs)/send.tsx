@@ -10,6 +10,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { formatCurrency, shortenAddress, isValidStellarAddress } from '@/utils/format';
 import { COUNTRIES, EXCHANGE_RATES } from '@/constants/countries';
 import { ChevronDown, Wallet as WalletIcon, Send, Shield, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Globe } from 'lucide-react-native';
+import { getFlagImage } from '@/utils/getFlagImage';
+import { Image } from 'react-native';
 
 export default function SendScreen() {
   const { selectedWallet, sendMoney } = useWallet();
@@ -144,10 +146,20 @@ export default function SendScreen() {
             <TouchableOpacity 
               style={[styles.countrySelector, { borderColor: colors.border }]}
               onPress={() => setShowCountryPicker(!showCountryPicker)}
-              className="flex-row justify-between items-center p-4 border-2 rounded-2xl"
+              className="flex-row justify-between items-center border-2 rounded-2xl"
             >
               <View style={styles.countryInfo} className="flex-row items-center">
-                <Text style={styles.countryFlag} className="text-3xl mr-4">{selectedCountry.flag}</Text>
+                <Image
+                  source={getFlagImage(selectedCountry.flag)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 6,
+                    marginRight: 16,
+                    backgroundColor: '#eee',
+                  }}
+                  resizeMode="cover"
+                />
                 <View>
                   <Text style={[styles.countryName, { color: colors.text }]} className="text-lg font-bold">
                     {selectedCountry.name}
@@ -156,12 +168,10 @@ export default function SendScreen() {
                     <Text style={[styles.countryCurrency, { color: colors.textMuted }]} className="text-sm font-semibold mr-2">
                       {selectedCountry.currency}
                     </Text>
-                    <View style={[styles.flagBadge, { backgroundColor: `${colors.primary}20` }]} className="px-2 py-1 rounded-full">
-                      <Text style={styles.flagBadgeText} className="text-xs">{selectedCountry.flag}</Text>
-                    </View>
                   </View>
                 </View>
               </View>
+
               <ChevronDown size={24} color={colors.textMuted} />
             </TouchableOpacity>
 
@@ -178,7 +188,17 @@ export default function SendScreen() {
                     }}
                     className="flex-row items-center p-4 border-b border-gray-100"
                   >
-                    <Text style={styles.countryFlag} className="text-3xl mr-4">{country.flag}</Text>
+                    <Image
+                      source={getFlagImage(country.flag)}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 6,
+                        marginRight: 16,
+                      }}
+                      resizeMode="cover"
+                    />
+
                     <View>
                       <Text style={[styles.countryName, { color: colors.text }]} className="text-lg font-bold">
                         {country.name}
@@ -187,9 +207,7 @@ export default function SendScreen() {
                         <Text style={[styles.countryCurrency, { color: colors.textMuted }]} className="text-sm font-semibold mr-2">
                           {country.currency}
                         </Text>
-                        <View style={[styles.flagBadge, { backgroundColor: `${colors.primary}20` }]} className="px-2 py-1 rounded-full">
-                          <Text style={styles.flagBadgeText} className="text-xs">{country.flag}</Text>
-                        </View>
+                        
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -319,17 +337,17 @@ export default function SendScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 22,
   },
   header: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: 12,
+    marginBottom: 24,
     alignItems: 'center',
   },
   headerIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -344,13 +362,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   card: {
-    marginHorizontal: 24,
-    marginBottom: 20,
+    marginHorizontal: 12,
+    marginBottom: 12,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
-    marginBottom: 16,
+    marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -367,7 +385,7 @@ const styles = StyleSheet.create({
   walletIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -380,7 +398,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   walletAddress: {
-    fontSize: 12,
+    fontSize: 16,
     marginTop: 4,
     fontFamily: 'monospace',
   },
@@ -388,7 +406,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   balanceLabel: {
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: '600',
   },
   balanceAmount: {
@@ -400,10 +418,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderWidth: 2,
-    borderRadius: 16,
+    borderRadius: 10,
   },
   countryInfo: {
     flexDirection: 'row',
@@ -411,7 +429,7 @@ const styles = StyleSheet.create({
   },
   countryFlag: {
     fontSize: 32,
-    marginRight: 16,
+    marginRight: 18,
   },
   countryName: {
     fontSize: 18,
@@ -427,17 +445,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   flagBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    marginLeft: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   flagBadgeText: {
     fontSize: 12,
   },
   countryPicker: {
     borderWidth: 2,
-    borderRadius: 16,
-    marginTop: 16,
+    borderRadius: 10,
+    marginTop: 12,
     overflow: 'hidden',
   },
   countryOption: {

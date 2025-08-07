@@ -97,7 +97,7 @@ export function CreateWalletModal({ visible, onClose }: CreateWalletModalProps) 
             <View style={styles.iconSection} className="items-center mb-8">
               <View style={[styles.iconContainer, { backgroundColor: `${colors.primary}20` }]} 
                     className="w-20 h-20 rounded-full justify-center items-center mb-4">
-                <Plus size={32} color={colors.primary} />
+                <Plus size={24} color={colors.primary} />
               </View>
               <Text style={[styles.subtitle, { color: colors.textMuted }]} className="text-base text-center">
                 Create a new Stellar wallet for secure transactions
@@ -177,20 +177,20 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: 12,
+    paddingTop: 12,
   },
   iconSection: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 12,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 56,
+    height: 56,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
@@ -198,7 +198,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   formCard: {
-    marginBottom: 24,
+    marginBottom: 28,
+    marginTop: 28,
+    borderRadius: 10,
   },
   securityNotice: {
     marginTop: 24,

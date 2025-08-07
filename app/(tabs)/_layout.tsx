@@ -10,18 +10,20 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderTopColor: colors.border,
           borderTopWidth: 1,
           paddingBottom: 12,
           paddingTop: 12,
+          borderTopEndRadius: 18,
+          borderTopStartRadius: 18,
           height: 88,
           shadowOffset: {
             width: 0,
             height: -4,
           },
           shadowOpacity: isDark ? 0.3 : 0.1,
-          shadowRadius: 12,
+          shadowRadius: 10,
           elevation: 8,
         },
         tabBarActiveTintColor: colors.primary,
@@ -54,15 +56,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="receive"
-        options={{
-          title: 'Receive',
-          tabBarIcon: ({ size, color }) => (
-            <QrCode size={size} color={color} />
-          ),
-        }}
-      />
+      
       <Tabs.Screen
         name="swap"
         options={{

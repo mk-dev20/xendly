@@ -5,33 +5,34 @@ export const COUNTRIES: Country[] = [
     code: 'KE',
     name: 'Kenya',
     currency: 'KES',
-    flag: '🇰🇪'
+    flag: 'ke.png'
   },
   {
     code: 'UG',
     name: 'Uganda',
     currency: 'UGX',
-    flag: '🇺🇬'
+    flag: 'ug.png'
   },
   {
     code: 'TZ',
     name: 'Tanzania',
     currency: 'TZS',
-    flag: '🇹🇿'
+    flag: 'tz.png'
   },
   {
     code: 'RW',
     name: 'Rwanda',
     currency: 'RWF',
-    flag: '🇷🇼'
+    flag: 'rw.png'
   },
   {
     code: 'BI',
     name: 'Burundi',
     currency: 'BIF',
-    flag: '🇧🇮'
+    flag: 'br.png'
   }
 ];
+
 
 export const SUPPORTED_CURRENCIES = ['XLM', 'USDC', 'KES', 'UGX', 'TZS', 'RWF', 'BIF'];
 
