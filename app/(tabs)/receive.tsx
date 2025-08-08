@@ -10,7 +10,7 @@ import { shortenAddress } from '@/utils/format';
 import { QrCode, Copy, Share2, Wallet as WalletIcon, CircleCheck as CheckCircle } from 'lucide-react-native';
 import QRCode from 'react-native-qrcode-svg';
 import * as Clipboard from 'expo-clipboard';
-import { AlertTriangle } from 'lucide-react-native'; // using lucide
+import { TriangleAlert as AlertTriangle } from 'lucide-react-native'; // using lucide
 
 
 export default function ReceiveScreen() {
