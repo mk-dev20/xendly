@@ -243,35 +243,19 @@ export default function HomeScreen() {
                   ]}
                   className="w-14 h-14 rounded-full justify-center items-center overflow-hidden"
                 >
-                  <ImageBackground
-                    source={getFlagImage(country.flag)}
-                    resizeMode="cover"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
-                    imageStyle={{
-                      borderRadius: 10,
-                      opacity: selectedCurrency === country.currency ? 1 : 0.7,
-                    }}
-                  >
-                    <Text style={[
-                      styles.currencyCode,
-                      { 
-                        color: selectedCurrency === country.currency ? '#fff' : '#000',
-                        backgroundColor: selectedCurrency === country.currency ? `${colors.primary}88` : 'rgba(235, 194, 14, 0.3)',
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                        borderRadius: 6,
-                        fontSize: 10,
-                        marginTop: 2
-                      }
-                    ]}>
-                      {country.currency}
-                    </Text>
-                  </ImageBackground>
+                  <Text style={[styles.flag, { fontSize: selectedCurrency === country.currency ? 32 : 28 }]}>
+                    {CURRENCY_FLAGS[country.currency]}
+                  </Text>
+                  <Text style={[
+                    styles.currencyCode,
+                    { 
+                      color: selectedCurrency === country.currency ? colors.primary : colors.textMuted,
+                      fontSize: selectedCurrency === country.currency ? 11 : 10,
+                      fontWeight: selectedCurrency === country.currency ? '700' : '600',
+                    }
+                  ]}>
+                    {country.currency}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>

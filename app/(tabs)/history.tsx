@@ -1,35 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, RefreshControl, Alert } from 'react-native';
 import { ThemedBackground } from '@/components/ThemedBackground';
 import { Card } from '@/components/Card';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { useWallet } from '@/contexts/WalletContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { formatCurrency, shortenAddress, formatDate } from '@/utils/format';
-import { Transaction } from '@/types';
+import { apiService } from '@/services/api';
 import { Send, ArrowDownLeft, Wallet, ArrowLeftRight, Clock, CircleCheck as CheckCircle, Circle as XCircle, CircleAlert as AlertCircle, History as HistoryIcon } from 'lucide-react-native';
+
+interface TransactionWithId {
+  id: string;
+  hash: string;
+  from: string;
+  to: string;
+  amount: string;
+  asset_code: string;
+  asset_issuer?: string;
+  memo?: string;
+  status: string;
+  created_at: string;
+}
 
 const filterOptions = ['All', 'Sent', 'Received', 'Funded', 'Swaps'];
 
 export default function HistoryScreen() {
-  const { selectedWallet, getWalletTransactions } = useWallet();
+  const { user } = useAuth();
   const { colors } = useTheme();
   const [selectedFilter, setSelectedFilter] = useState('All');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<TransactionWithId[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadTransactions();
-  }, [selectedWallet]);
+  }, [user]);
 
   const loadTransactions = async () => {
-    if (!selectedWallet) return;
+    if (!user) return;
     
     setLoading(true);
     try {
-      const data = await getWalletTransactions(selectedWallet.wallet_id);
-      setTransactions(data);
+      const response = await apiService.getTransactionHistory();
+      setTransactions(response.transactions);
     } catch (error) {
       console.error('Failed to load transactions:', error);
       Alert.alert('Error', 'Failed to load transaction history');
@@ -38,16 +51,43 @@ export default function HistoryScreen() {
     }
   };
 
+  const deleteTransaction = useCallback(async (transactionId: string) => {
+    Alert.alert(
+      'Delete Transaction Record',
+      'Deleting a transaction record is a security risk — this action is irreversible. The transaction will still exist on the blockchain.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiService.deleteTransaction(transactionId);
+              setTransactions(prev => prev.filter(tx => tx.id !== transactionId));
+              Alert.alert('Success', 'Transaction record deleted');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete transaction record');
+            }
+          }
+        },
+      ]
+    );
+  }, []);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadTransactions();
     setRefreshing(false);
   };
 
-  const getTransactionType = (tx: Transaction): 'sent' | 'received' | 'funded' | 'swap' => {
-    if (tx.from === selectedWallet?.public_key) return 'sent';
-    if (tx.to === selectedWallet?.public_key) return 'received';
+  const getTransactionType = (tx: TransactionWithId): 'sent' | 'received' | 'funded' | 'swap' => {
+    // Check if it's from Friendbot (funding)
     if (tx.from === 'GAIH3ULLFQ4DGSECF2AR555KZ4KNDGEKN4AFI4SU2M7B43MGK3QJZNSR') return 'funded'; // Friendbot
+    
+    // For user transactions, we'll need to check against user's wallets
+    // For now, use memo or other indicators to determine type
+    if (tx.memo && tx.memo.includes('swap')) return 'swap';
+    if (tx.amount.startsWith('-')) return 'sent';
     return 'swap';
   };
 
@@ -96,16 +136,32 @@ export default function HistoryScreen() {
     }
   };
 
-  const renderTransaction = ({ item }: { item: Transaction }) => {
+  const handleLongPress = (transaction: TransactionWithId) => {
+    Alert.alert(
+      'Transaction Options',
+      `Transaction: ${shortenAddress(transaction.hash)}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete Record', 
+          style: 'destructive',
+          onPress: () => deleteTransaction(transaction.id)
+        },
+      ]
+    );
+  };
+
+  const renderTransaction = ({ item }: { item: TransactionWithId }) => {
     const type = getTransactionType(item);
     const TransactionIcon = getTransactionIcon(type);
     const StatusIcon = getStatusIcon(item.status);
     const statusColor = getStatusColor(item.status);
-    const isPositive = type === 'received' || type === 'funded';
+    const isPositive = type === 'received' || type === 'funded' || !item.amount.startsWith('-');
     const amount = parseFloat(item.amount);
 
     return (
-      <Card style={styles.transactionCard} className="mx-6 mb-3" elevated>
+      <TouchableOpacity onLongPress={() => handleLongPress(item)} delayLongPress={800}>
+        <Card style={styles.transactionCard} className="mx-6 mb-3" elevated>
         <View style={styles.transactionRow} className="flex-row justify-between">
           <View style={styles.transactionLeft} className="flex-row flex-1">
             <View style={[styles.iconContainer, { backgroundColor: `${colors.primary}20` }]} 
@@ -117,7 +173,7 @@ export default function HistoryScreen() {
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </Text>
               <Text style={[styles.transactionAddress, { color: colors.textMuted }]} className="text-xs font-mono mb-1">
-                {type === 'sent' ? `To: ${shortenAddress(item.to)}` : 
+                {item.amount.startsWith('-') ? `To: ${shortenAddress(item.to)}` : 
                  type === 'received' ? `From: ${shortenAddress(item.from)}` :
                  type === 'funded' ? 'Friendbot Funding' : 'Currency Swap'}
               </Text>
@@ -159,7 +215,8 @@ export default function HistoryScreen() {
             </View>
           </View>
         </View>
-      </Card>
+        </Card>
+      </TouchableOpacity>
     );
   };
 

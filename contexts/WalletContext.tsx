@@ -158,6 +158,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
     }
   };
 
+  // Add method to set selected wallet (used by modals)
+  const setSelectedWallet = (wallet: Wallet) => {
+    setSelectedWallet(wallet);
+  };
+
   const getReceiveInfo = async (walletId: string) => {
     try {
       return await apiService.getReceiveInfo(walletId);
@@ -169,6 +174,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const value: WalletContextType = {
     wallets,
     selectedWallet,
+    setSelectedWallet,
     isLoading,
     refreshWallets,
     selectWallet,

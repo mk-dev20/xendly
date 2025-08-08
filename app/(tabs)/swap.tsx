@@ -6,6 +6,8 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiService } from '@/services/api';
 import { formatCurrency, shortenAddress } from '@/utils/format';
 import { SUPPORTED_CURRENCIES, EXCHANGE_RATES } from '@/constants/countries';
 import { ArrowLeftRight, Wallet as WalletIcon, ChevronDown, TrendingUp } from 'lucide-react-native';
@@ -34,6 +36,7 @@ const getCurrencyFlag = (currency: string): string => {
 };
 
 export default function SwapScreen() {
+  const { user } = useAuth();
   const { selectedWallet } = useWallet();
   const { colors } = useTheme();
   const [fromCurrency, setFromCurrency] = useState('XLM');
@@ -46,6 +49,7 @@ export default function SwapScreen() {
   const amountNumber = parseFloat(amount) || 0;
   const conversionRate = EXCHANGE_RATES[toCurrency] / EXCHANGE_RATES[fromCurrency];
   const convertedAmount = amountNumber * conversionRate;
+  const swapFee = amountNumber * 0.001; // 0.1% fee
 
   const handleSwap = async () => {
     if (!amount || amountNumber <= 0) {
@@ -58,14 +62,30 @@ export default function SwapScreen() {
       return;
     }
 
+    if (!selectedWallet) {
+      Alert.alert('Error', 'No wallet selected');
+      return;
+    }
     setLoading(true);
     try {
-      // Simulate swap for MVP
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      Alert.alert('Success', `Swapped ${formatCurrency(amountNumber, fromCurrency)} to ${formatCurrency(convertedAmount, toCurrency)}`);
+      // Call real swap endpoint
+      const response = await apiService.request(`/api/wallets/${selectedWallet.wallet_id}/swap`, {
+        method: 'POST',
+        body: JSON.stringify({
+          from_currency: fromCurrency,
+          to_currency: toCurrency,
+          amount: amountNumber,
+        }),
+      });
+      
+      Alert.alert(
+        'Swap Successful!', 
+        `Swapped ${formatCurrency(amountNumber, fromCurrency)} to ${formatCurrency(convertedAmount, toCurrency)}\n\nFee: ${formatCurrency(swapFee, fromCurrency)}`
+      );
       setAmount('');
     } catch (error) {
-      Alert.alert('Swap Failed', 'Failed to complete currency swap');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to complete currency swap';
+      Alert.alert('Swap Failed', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -211,7 +231,15 @@ export default function SwapScreen() {
                 </Text>
                 <View style={styles.conversionAmount} className="flex-row items-center">
                   <Text style={styles.conversionFlag} className="text-base mr-1">{getCurrencyFlag(toCurrency)}</Text>
-                  <Text style={[styles.conversionText, { color: colors.text }]} className="text-base font-bold">
+                  <Text style={[styles.conversionLabel, { color: colors.textMuted }]} className="text-sm font-semibold">
+                    Swap Fee (0.1%):
+                  </Text>
+                  <Text style={[styles.conversionValue, { color: colors.text }]} className="text-sm font-bold">
+                    {formatCurrency(swapFee, fromCurrency)}
+                  </Text>
+                </View>
+                <View style={styles.conversionRow} className="flex-row justify-between mb-2">
+                      {formatCurrency(convertedAmount - (swapFee * conversionRate), toCurrency)}
                     {formatCurrency(convertedAmount, toCurrency)}
                   </Text>
                 </View>

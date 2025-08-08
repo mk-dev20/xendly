@@ -112,6 +112,7 @@ export interface AuthContextType {
 export interface WalletContextType {
   wallets: Wallet[];
   selectedWallet: Wallet | null;
+  setSelectedWallet: (wallet: Wallet) => void;
   isLoading: boolean;
   refreshWallets: () => Promise<void>;
   selectWallet: (wallet: Wallet) => void;

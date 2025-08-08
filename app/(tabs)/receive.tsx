@@ -116,7 +116,7 @@ export default function ReceiveScreen() {
               />
             </View>
             <Text style={[styles.qrLabel, { color: colors.textMuted }]} className="text-sm mt-4 text-center">
-              Scan this QR code to get my wallet address
+              Scan this QR code to get my Stellar wallet address
             </Text>
           </View>
 
@@ -124,7 +124,7 @@ export default function ReceiveScreen() {
           <View style={[styles.addressContainer, { backgroundColor: colors.background, borderColor: colors.border }]} 
                 className="p-4 rounded-2xl border-2 mb-6">
             <Text style={[styles.addressLabel, { color: colors.textMuted }]} className="text-xs font-bold uppercase tracking-wider mb-2">
-              Stellar Address
+              Stellar Public Key
             </Text>
             <Text style={[styles.address, { color: colors.text }]} className="text-base font-mono leading-6">
               {selectedWallet?.public_key || 'Loading...'}

@@ -133,8 +133,15 @@ export function TwoFASetupModal({ visible, onClose, onSuccess }: TwoFASetupModal
         Vibration.vibrate([100, 50, 100, 50, 100]);
       }
       
-      const errorMessage = error instanceof Error ? error.message : 'Invalid verification code';
-      Alert.alert('Verification Failed', errorMessage + '. Please check your authenticator app and try again.');
+      console.error('2FA setup failed:', error);
+      Alert.alert(
+        'Setup Error', 
+        'Failed to initialize 2FA setup. Please check your connection and try again.',
+        [
+          { text: 'Retry', onPress: loadSetupData },
+          { text: 'Cancel', onPress: onClose }
+        ]
+      );
     } finally {
       setLoading(false);
     }

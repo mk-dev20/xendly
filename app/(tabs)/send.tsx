@@ -299,7 +299,7 @@ export default function SendScreen() {
                 keyboardType="numeric"
                 placeholder="000000"
                 maxLength={6}
-                helperText="Enter the 6-digit code from your authenticator app"
+                helperText="Enter a valid Stellar public key (starts with G, validated by Stellar SDK)"
               />
             )}
           </Card>

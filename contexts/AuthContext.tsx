@@ -24,23 +24,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
         apiService.setAuthToken(token);
         try {
           const validation = await apiService.validateToken();
-          if (validation.valid) {
+          if (validation && validation.valid) {
             const profile = await apiService.getProfile();
             setUser(profile);
           } else {
+            console.log('Token validation failed - clearing auth');
             await AsyncStorage.removeItem('auth_token');
             apiService.clearAuthToken();
           }
         } catch (error) {
-          console.error('Token validation failed:', error);
-          await AsyncStorage.removeItem('auth_token');
-          apiService.clearAuthToken();
+          console.error('Token validation network error:', error);
+          // Don't clear token on network errors - only on explicit validation failure
+          // The token might still be valid, just network issues
         }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      await AsyncStorage.removeItem('auth_token');
-      apiService.clearAuthToken();
+      // Don't clear token on storage read errors
     } finally {
       setIsLoading(false);
     }
@@ -54,8 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { two_fa_required: true, user_id: response.user_id };
       }
       
-      await AsyncStorage.setItem('auth_token', response.token);
-      apiService.setAuthToken(response.token);
+      // Token is already stored in apiService.login()
       const profile = await apiService.getProfile();
       setUser(profile);
       
@@ -67,8 +66,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signup = async (email: string, password: string, username: string, phoneNumber?: string) => {
     try {
-      // Just register the user, don't auto-login
-      return await apiService.register(email, password, username, phoneNumber);
+      const response = await apiService.register(email, password, username, phoneNumber);
+      
+      // If token is provided, auto-login the user
+      if (response.token) {
+        const profile = await apiService.getProfile();
+        setUser(profile);
+      }
+      
+      return response;
     } catch (error) {
       throw error;
     }
@@ -77,8 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const verify2FA = async (userId: string, totpCode: string) => {
     try {
       const response = await apiService.verify2FA(userId, totpCode);
-      await AsyncStorage.setItem('auth_token', response.token);
-      apiService.setAuthToken(response.token);
+      // Token is already stored in apiService.verify2FA()
       const profile = await apiService.getProfile();
       setUser(profile);
     } catch (error) {
@@ -89,8 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshToken = async () => {
     try {
       const response = await apiService.refreshToken();
-      await AsyncStorage.setItem('auth_token', response.token);
-      apiService.setAuthToken(response.token);
+      // Token is already stored in apiService.refreshToken()
     } catch (error) {
       throw error;
     }

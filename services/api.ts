@@ -1,8 +1,23 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const API_BASE_URL = 'http://localhost:8080';
 
 
 class ApiService {
   private token: string | null = null;
+
+  async initializeToken() {
+    if (!this.token) {
+      try {
+        const storedToken = await AsyncStorage.getItem('auth_token');
+        if (storedToken) {
+          this.token = storedToken;
+        }
+      } catch (error) {
+        console.error('Failed to load token from storage:', error);
+      }
+    }
+  }
 
   setAuthToken(token: string) {
     this.token = token;
@@ -12,7 +27,10 @@ class ApiService {
     this.token = null;
   }
 
-  private getHeaders() {
+  private async getHeaders() {
+    // Ensure token is loaded from storage if not in memory
+    await this.initializeToken();
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -21,7 +39,6 @@ class ApiService {
       headers.Authorization = `Bearer ${this.token}`;
     }
     
-    console.log('✅ Sending auth headers:', headers);
     return headers;
   }
 
@@ -32,7 +49,7 @@ class ApiService {
       const response = await fetch(url, {
         ...options,
         headers: {
-          ...this.getHeaders(),
+          ...(await this.getHeaders()),
           ...options.headers,
         },
       });
@@ -64,9 +81,9 @@ class ApiService {
 
   // Auth endpoints
   async login(emailOrUsername: string, password: string) {
-    return this.request<{ 
-      token: string; 
-      expires_in: number; 
+    const response = await this.request<{ 
+      token?: string; 
+      expires_in?: number; 
       two_fa_required: boolean; 
       user_id: string 
     }>('/api/auth/login', {
@@ -76,10 +93,19 @@ class ApiService {
         password 
       }),
     });
+    
+    // Store token immediately if provided (non-2FA login)
+    if (response.token) {
+      await AsyncStorage.setItem('auth_token', response.token);
+      this.setAuthToken(response.token);
+    }
+    
+    return response;
   }
 
   async register(email: string, password: string, username: string, phoneNumber?: string) {
-    return this.request<{ 
+    const response = await this.request<{ 
+      token?: string;
       message: string; 
       user_id: string 
     }>('/api/auth/register', {
@@ -91,10 +117,18 @@ class ApiService {
         phone_number: phoneNumber 
       }),
     });
+    
+    // Store token immediately if provided (auto-login after signup)
+    if (response.token) {
+      await AsyncStorage.setItem('auth_token', response.token);
+      this.setAuthToken(response.token);
+    }
+    
+    return response;
   }
 
   async verify2FA(userId: string, totpCode: string) {
-    return this.request<{ 
+    const response = await this.request<{ 
       token: string; 
       expires_in: number 
     }>('/api/auth/2fa-verify', {
@@ -104,6 +138,12 @@ class ApiService {
         totp_code: totpCode 
       }),
     });
+    
+    // Store token immediately after 2FA verification
+    await AsyncStorage.setItem('auth_token', response.token);
+    this.setAuthToken(response.token);
+    
+    return response;
   }
 
   async logout() {
@@ -121,13 +161,19 @@ class ApiService {
   }
 
   async refreshToken() {
-    return this.request<{ 
+    const response = await this.request<{ 
       token: string; 
       expires_in: number 
     }>('/api/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ token: this.token }),
     });
+    
+    // Update stored token after refresh
+    await AsyncStorage.setItem('auth_token', response.token);
+    this.setAuthToken(response.token);
+    
+    return response;
   }
 
   async validateToken() {
@@ -268,6 +314,30 @@ class ApiService {
         user_id: userId, 
         totp_code: totpCode 
       }),
+    });
+  }
+
+  // Transaction endpoints
+  async getTransactionHistory() {
+    return this.request<{
+      transactions: Array<{
+        id: string;
+        hash: string;
+        from: string;
+        to: string;
+        amount: string;
+        asset_code: string;
+        asset_issuer?: string;
+        memo?: string;
+        status: string;
+        created_at: string;
+      }>
+    }>('/api/transactions/history');
+  }
+
+  async deleteTransaction(transactionId: string) {
+    return this.request<{ message: string }>(`/api/transactions/${transactionId}`, {
+      method: 'DELETE',
     });
   }
 
